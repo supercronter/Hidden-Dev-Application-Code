@@ -1,0 +1,226 @@
+local RunService =game:GetService("RunService")
+local Userinput = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+local Charatcer = Player.Character or Player.CharacterAdded:Wait()
+local LastPressedMovementKey = ""
+local MovementKeyIsPressed = false
+local IsSprinting = false
+local AnimationID = {
+	WalkForward = "rbxassetid://15731313893",
+	WalkBackWard = "rbxassetid://15731312134",
+	Sprint = "rbxassetid://15731315812",
+}
+local W, S, A, D = Enum.KeyCode.W,Enum.KeyCode.S,Enum.KeyCode.A,Enum.KeyCode.D
+
+Player.CharacterAdded:Connect(function(char)
+	Charatcer = char
+	local Humanoid = Charatcer:WaitForChild("Humanoid")
+	Humanoid.JumpPower = 0
+end)
+
+local MovementAnimationtrack:AnimationTrack = nil
+local CurrentPlayingAnimation = "Idle"
+-- this function overrides any existing animation with the new one
+function NewMovementAnimationTrack(NewAnimation)
+	if MovementAnimationtrack then
+		MovementAnimationtrack:Stop()
+	end
+	local Humanoid = Charatcer:FindFirstChild("Humanoid")
+	if not Humanoid then warn("Unable to find humanoid") return end
+	if Humanoid.Health <= 0 then warn("Player is dead") return end
+	
+	local Animator = Humanoid:FindFirstChild("Animator")
+	if not Animator then warn("Unable to find Animator") return end
+	
+	MovementAnimationtrack = Animator:LoadAnimation(NewAnimation)
+	MovementAnimationtrack.Looped = true
+	MovementAnimationtrack.Priority = Enum.AnimationPriority.Action
+end
+-- this function update the movement animation, it will fire every time w,s,a or d is pressed or release
+function MovementAnimationUpdate()
+	local Humanoid = Charatcer:FindFirstChild("Humanoid")
+	if not Humanoid then warn("Unable to find humanoid") return end
+	if Humanoid.Health <= 0 then warn("Player is dead") return end
+	
+	if not MovementKeyIsPressed and CurrentPlayingAnimation ~= "Idle" then
+		-- idle
+		TweenService:Create(Charatcer.LowerTorso.Root, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {C1 = CFrame.fromOrientation(0, 0, math.rad(0))}):Play()
+		CurrentPlayingAnimation = "Idle"
+		if MovementAnimationtrack then
+			MovementAnimationtrack:Stop()
+			MovementAnimationtrack = nil
+		end
+		return 
+	end
+	if Userinput:IsKeyDown(W) and not Userinput:IsKeyDown(S) then
+		-- Moves Forward
+		local AnimationInstance = Instance.new("Animation", script)
+		if Userinput:IsKeyDown(Enum.KeyCode.LeftShift) then
+			if CurrentPlayingAnimation ~= "Running"then
+				print("Running")
+				AnimationInstance.AnimationId = AnimationID.Sprint
+				Humanoid.WalkSpeed = 30
+				NewMovementAnimationTrack(AnimationInstance)
+				CurrentPlayingAnimation = "Running"
+				MovementAnimationtrack:Play()
+			end
+			
+		else
+			if CurrentPlayingAnimation ~= "WalkingF"then
+				AnimationInstance.AnimationId = AnimationID.WalkForward
+				Humanoid.WalkSpeed = 8
+				NewMovementAnimationTrack(AnimationInstance)
+				CurrentPlayingAnimation = "WalkingF"
+				MovementAnimationtrack:Play()
+			end
+			
+		end
+		
+	elseif Userinput:IsKeyDown(W) and Userinput:IsKeyDown(S) then
+		if MovementAnimationtrack then
+			MovementAnimationtrack:Stop()
+			MovementAnimationtrack = nil
+		end
+	end
+	
+	if Userinput:IsKeyDown(S) and not Userinput:IsKeyDown(W) and CurrentPlayingAnimation ~= "WalkingB" then
+		-- Move Backward 
+		local AnimationInstance = Instance.new("Animation", script)
+		AnimationInstance.AnimationId = AnimationID.WalkBackWard
+		Humanoid.WalkSpeed = 8
+		NewMovementAnimationTrack(AnimationInstance)
+		CurrentPlayingAnimation = "WalkingB"
+		MovementAnimationtrack:Play()
+	elseif Userinput:IsKeyDown(W) and Userinput:IsKeyDown(S) then
+		if MovementAnimationtrack then
+			MovementAnimationtrack:Stop()
+			MovementAnimationtrack = nil
+		end
+	end
+	
+	if Userinput:IsKeyDown(D) and not Userinput:IsKeyDown(A) then
+		-- Move Right
+		TweenService:Create(Charatcer.LowerTorso.Root, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {C1 = CFrame.fromOrientation(0, 0, math.rad(5))}):Play()
+		if not Userinput:IsKeyDown(Enum.KeyCode.W) then
+			Humanoid.WalkSpeed = 8
+			if CurrentPlayingAnimation ~= "WalkingF" and not Userinput:IsKeyDown(S) then
+				local AnimationInstance = Instance.new("Animation", script)
+				AnimationInstance.AnimationId = AnimationID.WalkForward
+				NewMovementAnimationTrack(AnimationInstance)
+				CurrentPlayingAnimation = "WalkingF"
+				MovementAnimationtrack:Play()
+			elseif Userinput:IsKeyDown(S) and CurrentPlayingAnimation ~= "WalkingB" then
+				
+				local AnimationInstance = Instance.new("Animation", script)
+				AnimationInstance.AnimationId = AnimationID.WalkBackWard
+				NewMovementAnimationTrack(AnimationInstance)
+				CurrentPlayingAnimation = "WalkingB"
+				MovementAnimationtrack:Play()
+			end
+		end
+	end
+
+	if Userinput:IsKeyDown(A) and not Userinput:IsKeyDown(D) then
+		-- Move Left
+		TweenService:Create(Charatcer.LowerTorso.Root, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {C1 = CFrame.fromOrientation(0, 0, math.rad(-5))}):Play()
+		if not Userinput:IsKeyDown(Enum.KeyCode.W) then
+			Humanoid.WalkSpeed = 8
+			if CurrentPlayingAnimation ~= "WalkingF" and not Userinput:IsKeyDown(S) then
+				local AnimationInstance = Instance.new("Animation", script)
+				AnimationInstance.AnimationId = AnimationID.WalkForward
+				NewMovementAnimationTrack(AnimationInstance)
+				CurrentPlayingAnimation = "WalkingF"
+				MovementAnimationtrack:Play()
+			elseif Userinput:IsKeyDown(S) and CurrentPlayingAnimation ~= "WalkingB" then
+
+				local AnimationInstance = Instance.new("Animation", script)
+				AnimationInstance.AnimationId = AnimationID.WalkBackWard
+				NewMovementAnimationTrack(AnimationInstance)
+				CurrentPlayingAnimation = "WalkingB"
+				MovementAnimationtrack:Play()
+			end
+		end
+	end
+	
+	if not Userinput:IsKeyDown(A) and not Userinput:IsKeyDown(D) then
+		TweenService:Create(Charatcer.LowerTorso.Root, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {C1 = CFrame.fromOrientation(0, 0, math.rad(0))}):Play()
+	end
+	
+end
+
+local OnDashCooldown = false
+function Dash()
+	OnDashCooldown = true
+	local HumanoidRootPart = Charatcer:FindFirstChild("HumanoidRootPart")
+	local Humanoid = Charatcer:FindFirstChild("Humanoid")
+	if not HumanoidRootPart and not Humanoid and Humanoid.Health <= 0 then return end
+	-- make player massless
+	for i, v in pairs(Charatcer:GetChildren()) do
+		if v.ClassName == "Part" or v.ClassName == "MeshPart" then
+			v.Massless = true
+		end 
+	end
+	local LV = Instance.new("LinearVelocity", HumanoidRootPart)
+	LV.Attachment0 = HumanoidRootPart.RootAttachment
+	LV.MaxForce = math.huge
+	local Direction = Vector3.new(0,0,0)
+	-- the dash direction are determind by the key that are pressed
+	if Userinput:IsKeyDown(W) then
+		Direction = HumanoidRootPart.CFrame.LookVector
+	elseif Userinput:IsKeyDown(S) then
+		Direction = -HumanoidRootPart.CFrame.LookVector
+	elseif Userinput:IsKeyDown(A) then
+		Direction = -HumanoidRootPart.CFrame.RightVector
+	elseif Userinput:IsKeyDown(D) then
+		Direction = HumanoidRootPart.CFrame.RightVector
+	end
+	
+	local Velocity = 100
+	LV.VectorVelocity = Direction * Velocity
+	local Con
+	-- this heart beat event will decelerate the dash velocity instead of stoping it immediatly
+	Con = RunService.Heartbeat:Connect(function(dt)
+		Velocity -= 500 * dt
+		LV.VectorVelocity = Direction * Velocity
+		print(LV.VectorVelocity.Magnitude)
+		if Velocity < 5 then
+			LV:Destroy()
+			Con:Disconnect()
+			wait(1)
+			OnDashCooldown = false
+		end
+	end)
+end
+
+Userinput.InputBegan:Connect(function(input, IsTyping)
+	if IsTyping then return end
+	local KeyCode = input.KeyCode
+	if KeyCode == W or KeyCode == S or KeyCode == A or KeyCode == D or KeyCode == Enum.KeyCode.LeftShift then
+		print("MovmentUpdate")
+		MovementKeyIsPressed = true
+		MovementAnimationUpdate()
+	end
+	if KeyCode == Enum.KeyCode.Q and not OnDashCooldown then
+		Dash()
+	end
+end)
+
+Userinput.InputEnded:Connect(function(input, IsTyping)
+	if IsTyping then return end
+	local KeyCode = input.KeyCode
+	if KeyCode == W or KeyCode == S or KeyCode == A or KeyCode == D or KeyCode == Enum.KeyCode.LeftShift then
+		print("MovmentUpdate")
+		MovementKeyIsPressed = true
+		MovementAnimationUpdate()
+	end
+end)
+
+RunService.Heartbeat:Connect(function()
+	
+	if not Userinput:IsKeyDown(W) and not Userinput:IsKeyDown(S) and not Userinput:IsKeyDown(A) and not Userinput:IsKeyDown(D) then
+		MovementKeyIsPressed = false
+		MovementAnimationUpdate()
+	end
+end)
